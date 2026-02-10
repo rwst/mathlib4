@@ -186,7 +186,8 @@ theorem derivative.ext {R} [CommRing R] [IsAddTorsionFree R] {f g} (hD : d⁄dX 
 The following theorem is stated only in the case that `R` is a field. This is because
 there is currently no instance of `Inv R⟦X⟧` for more general base rings `R`.
 -/
-/-- The derivative of $f^{-1}$ for a power series over a field: $(f^{-1})' = -(f^{-1})^2 \cdot f'$. -/
+/-- The derivative of $f^{-1}$ for a power series over a field:
+$(f^{-1})' = -(f^{-1})^2 \cdot f'$. -/
 @[simp] theorem derivative_inv' {R} [Field R] (f : R⟦X⟧) : d⁄dX R f⁻¹ = -f⁻¹ ^ 2 * d⁄dX R f := by
   by_cases h : constantCoeff f = 0
   · suffices f⁻¹ = 0 by
