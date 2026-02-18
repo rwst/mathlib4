@@ -70,8 +70,8 @@ theorem derivativeFun_add (f g : R⟦X⟧) :
   rw [coeff_derivativeFun, map_add, map_add, coeff_derivativeFun,
     coeff_derivativeFun, add_mul]
 
-/-- The formal derivative of a constant power series is zero: $(C\, r)' = 0$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- The formal derivative of a constant power series is zero: $(C\, r)' = 0$. -/
 theorem derivativeFun_C (r : R) : derivativeFun (C r) = 0 := by
   ext n
   -- Note that `map_zero` didn't get picked up, apparently due to a missing `FunLike.coe`
@@ -94,8 +94,8 @@ private theorem derivativeFun_coe_mul_coe (f g : R[X]) : derivativeFun (f * g : 
   rw [← coe_mul, derivativeFun_coe, derivative_mul,
     add_comm, mul_comm _ g, ← coe_mul, ← coe_mul, Polynomial.coe_add]
 
-/-- **Leibniz rule for formal power series**: $(fg)' = f g' + g f'$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- **Leibniz rule for formal power series**: $(fg)' = f g' + g f'$. -/
 theorem derivativeFun_mul (f g : R⟦X⟧) :
     derivativeFun (f * g) = f • g.derivativeFun + g • f.derivativeFun := by
   ext n
@@ -110,16 +110,16 @@ theorem derivativeFun_mul (f g : R⟦X⟧) :
 theorem derivativeFun_one : derivativeFun (1 : R⟦X⟧) = 0 := by
   rw [← map_one C, derivativeFun_C (1 : R)]
 
-/-- The formal derivative commutes with scalar multiplication: $(r \cdot f)' = r \cdot f'$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- The formal derivative commutes with scalar multiplication: $(r \cdot f)' = r \cdot f'$. -/
 theorem derivativeFun_smul (r : R) (f : R⟦X⟧) : derivativeFun (r • f) = r • derivativeFun f := by
   rw [smul_eq_C_mul, smul_eq_C_mul, derivativeFun_mul, derivativeFun_C, smul_zero, add_zero,
     smul_eq_mul]
 
 variable (R)
 
-/-- The formal derivative of a formal power series. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- The formal derivative of a formal power series. -/
 noncomputable def derivative : Derivation R R⟦X⟧ R⟦X⟧ where
   toFun := derivativeFun
   map_add' := derivativeFun_add
@@ -175,15 +175,15 @@ theorem derivative.ext {R} [CommRing R] [IsAddTorsionFree R] {f g} (hD : d⁄dX 
     rwa [coeff_derivative, coeff_derivative, ← cast_succ, mul_comm, ← nsmul_eq_mul,
       mul_comm, ← nsmul_eq_mul, smul_right_inj n.succ_ne_zero] at equ
 
-/-- The derivative of the inverse of a unit power series: $(f^{-1})' = -(f^{-1})^2 \cdot f'$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- The derivative of the inverse of a unit power series: $(f^{-1})' = -(f^{-1})^2 \cdot f'$. -/
 @[simp] theorem derivative_inv {R} [CommRing R] (f : R⟦X⟧ˣ) :
     d⁄dX R ↑f⁻¹ = -(↑f⁻¹ : R⟦X⟧) ^ 2 * d⁄dX R f := by
   apply Derivation.leibniz_of_mul_eq_one
   simp
 
-/-- The derivative of $⅟f$ for an invertible power series $f$: $(⅟f)' = -(⅟f)^2 \cdot f'$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- The derivative of $⅟f$ for an invertible power series $f$: $(⅟f)' = -(⅟f)^2 \cdot f'$. -/
 @[simp] theorem derivative_invOf {R} [CommRing R] (f : R⟦X⟧) [Invertible f] :
     d⁄dX R ⅟f = -⅟f ^ 2 * d⁄dX R f := by
   rw [Derivation.leibniz_invOf, smul_eq_mul]
@@ -205,8 +205,8 @@ $(f^{-1})' = -(f^{-1})^2 \cdot f'$. -/
 
 variable (A : Type*) [CommRing A]
 
-/-- **Power rule**: $(g^n)' = n \cdot g^{n-1} \cdot g'$. -/
 set_option backward.isDefEq.respectTransparency false in
+/-- **Power rule**: $(g^n)' = n \cdot g^{n-1} \cdot g'$. -/
 theorem derivative_pow (g : A⟦X⟧) (n : ℕ) :
     d⁄dX A (g ^ n) = n * g ^ (n - 1) * d⁄dX A g := by
   induction n with
