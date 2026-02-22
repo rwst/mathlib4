@@ -52,18 +52,14 @@ derivation `derivative` on `R⟦X⟧`.
 -/
 noncomputable def derivativeFun (f : R⟦X⟧) : R⟦X⟧ := mk fun n ↦ coeff (n + 1) f * (n + 1)
 
-/-- The `n`-th coefficient of `f'` is `coeff (n + 1) f * (n + 1)`. -/
 theorem coeff_derivativeFun (f : R⟦X⟧) (n : ℕ) :
     coeff n f.derivativeFun = coeff (n + 1) f * (n + 1) := by
   rw [derivativeFun, coeff_mk]
 
-/-- The formal derivative of a polynomial, viewed as a power series, is the polynomial
-derivative. -/
 theorem derivativeFun_coe (f : R[X]) : (f : R⟦X⟧).derivativeFun = derivative f := by
   ext
   rw [coeff_derivativeFun, coeff_coe, coeff_coe, coeff_derivative]
 
-/-- The formal derivative is additive: `(f + g)' = f' + g'`. -/
 theorem derivativeFun_add (f g : R⟦X⟧) :
     derivativeFun (f + g) = derivativeFun f + derivativeFun g := by
   ext
@@ -71,13 +67,11 @@ theorem derivativeFun_add (f g : R⟦X⟧) :
     coeff_derivativeFun, add_mul]
 
 set_option backward.isDefEq.respectTransparency false in
-/-- The formal derivative of a constant power series is zero: `(C r)' = 0`. -/
 theorem derivativeFun_C (r : R) : derivativeFun (C r) = 0 := by
   ext n
   -- Note that `map_zero` didn't get picked up, apparently due to a missing `FunLike.coe`
   rw [coeff_derivativeFun, coeff_succ_C, zero_mul, (coeff n).map_zero]
 
-/-- Truncation commutes with formal differentiation. -/
 theorem trunc_derivativeFun (f : R⟦X⟧) (n : ℕ) :
     trunc n f.derivativeFun = derivative (trunc (n + 1) f) := by
   ext d
@@ -106,12 +100,10 @@ theorem derivativeFun_mul (f g : R⟦X⟧) :
     coeff_mul_eq_coeff_trunc_mul_trunc₂ f g.derivativeFun h₂ h₁, trunc_derivativeFun,
     trunc_derivativeFun, ← map_add, ← derivativeFun_coe_mul_coe, coeff_derivativeFun]
 
-/-- The formal derivative of `1` is `0`. -/
 theorem derivativeFun_one : derivativeFun (1 : R⟦X⟧) = 0 := by
   rw [← map_one C, derivativeFun_C (1 : R)]
 
 set_option backward.isDefEq.respectTransparency false in
-/-- The formal derivative commutes with scalar multiplication: `(r • f)' = r • f'`. -/
 theorem derivativeFun_smul (r : R) (f : R⟦X⟧) : derivativeFun (r • f) = r • derivativeFun f := by
   rw [smul_eq_C_mul, smul_eq_C_mul, derivativeFun_mul, derivativeFun_C, smul_zero, add_zero,
     smul_eq_mul]
@@ -131,18 +123,13 @@ scoped notation "d⁄dX" => derivative
 
 variable {R}
 
-/-- The derivative of a constant power series is zero: `(C r)' = 0`. -/
 @[simp] theorem derivative_C (r : R) : d⁄dX R (C r) = 0 := derivativeFun_C r
 
-/-- The `n`-th coefficient of `f'` is `coeff (n + 1) f * (n + 1)`. -/
 theorem coeff_derivative (f : R⟦X⟧) (n : ℕ) :
     coeff n (d⁄dX R f) = coeff (n + 1) f * (n + 1) := coeff_derivativeFun f n
 
-/-- The formal derivative of a polynomial coerced to a power series equals the polynomial
-derivative. -/
 theorem derivative_coe (f : R[X]) : d⁄dX R f = Polynomial.derivative f := derivativeFun_coe f
 
-/-- The formal derivative of `X` is `1`. -/
 @[simp] theorem derivative_X : d⁄dX R (X : R⟦X⟧) = 1 := by
   ext n; simp only [coeff_derivative, coeff_one, coeff_X, boole_mul, add_eq_right]
   split_ifs <;> simp_all
@@ -162,8 +149,6 @@ end CommutativeSemiring
 /- In the next lemma, we use `smul_right_inj`, which requires not only `IsAddTorsionFree R`, but
 also cancellation of addition in `R`. For this reason, the next lemma is stated in the case that `R`
 is a `CommRing`. -/
-
-/-- If `f` and `g` have the same constant term and derivative, then they are equal. -/
 theorem derivative.ext {R} [CommRing R] [IsAddTorsionFree R] {f g} (hD : d⁄dX R f = d⁄dX R g)
     (hc : constantCoeff f = constantCoeff g) : f = g := by
   ext n
@@ -176,14 +161,12 @@ theorem derivative.ext {R} [CommRing R] [IsAddTorsionFree R] {f g} (hD : d⁄dX 
       mul_comm, ← nsmul_eq_mul, smul_right_inj n.succ_ne_zero] at equ
 
 set_option backward.isDefEq.respectTransparency false in
-/-- The derivative of the inverse of a unit power series: `(f⁻¹)' = -(f⁻¹)² * f'`. -/
 @[simp] theorem derivative_inv {R} [CommRing R] (f : R⟦X⟧ˣ) :
     d⁄dX R ↑f⁻¹ = -(↑f⁻¹ : R⟦X⟧) ^ 2 * d⁄dX R f := by
   apply Derivation.leibniz_of_mul_eq_one
   simp
 
 set_option backward.isDefEq.respectTransparency false in
-/-- The derivative of `⅟f` for an invertible power series `f`: `(⅟f)' = -(⅟f)² * f'`. -/
 @[simp] theorem derivative_invOf {R} [CommRing R] (f : R⟦X⟧) [Invertible f] :
     d⁄dX R ⅟f = -⅟f ^ 2 * d⁄dX R f := by
   rw [Derivation.leibniz_invOf, smul_eq_mul]
@@ -193,8 +176,6 @@ set_option backward.isDefEq.respectTransparency false in
 The following theorem is stated only in the case that `R` is a field. This is because
 there is currently no instance of `Inv R⟦X⟧` for more general base rings `R`.
 -/
-/-- The derivative of `f⁻¹` for a power series over a field:
-`(f⁻¹)' = -(f⁻¹)² * f'`. -/
 @[simp] theorem derivative_inv' {R} [Field R] (f : R⟦X⟧) : d⁄dX R f⁻¹ = -f⁻¹ ^ 2 * d⁄dX R f := by
   by_cases h : constantCoeff f = 0
   · suffices f⁻¹ = 0 by
@@ -204,7 +185,6 @@ there is currently no instance of `Inv R⟦X⟧` for more general base rings `R`
   exact PowerSeries.inv_mul_cancel (h := h)
 
 set_option backward.isDefEq.respectTransparency false in
-/-- The derivative of g^n equals n * g^(n-1) * g'. -/
 theorem derivative_pow (A : Type*) [CommSemiring A] (g : A⟦X⟧) (n : ℕ) :
     d⁄dX A (g ^ n) = n * g ^ (n - 1) * d⁄dX A g := by
   rw [Derivation.leibniz_pow, smul_eq_mul, nsmul_eq_mul, mul_assoc]
