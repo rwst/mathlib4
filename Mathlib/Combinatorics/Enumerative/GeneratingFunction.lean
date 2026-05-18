@@ -33,6 +33,7 @@ symbolic method (Flajolet–Sedgewick, *Analytic Combinatorics*):
 
 ## Main results
 
+* `CombinatorialClass.ogf_congr`: size-preserving isomorphic classes have equal OGF.
 * `CombinatorialClass.ogf_sum`: `(𝒜.sum ℬ).ogf = 𝒜.ogf + ℬ.ogf`.
 * `CombinatorialClass.ogf_prod`: `(𝒜.prod ℬ).ogf = 𝒜.ogf * ℬ.ogf`.
 
@@ -84,19 +85,23 @@ noncomputable def ogf : PowerSeries ℕ := PowerSeries.mk 𝒜.card
 theorem coeff_ogf (n : ℕ) : coeff n 𝒜.ogf = 𝒜.card n := by
   simp only [ogf, coeff_mk]
 
+/-! ### Isomorphism invariance -/
+
+/-- The OGF is an invariant of size-preserving isomorphism: two combinatorial classes
+related by a size-preserving bijection have the same ordinary generating function. -/
+theorem ogf_congr (e : 𝒜.carrier ≃ ℬ.carrier) (he : ∀ a, ℬ.size (e a) = 𝒜.size a) :
+    𝒜.ogf = ℬ.ogf := by
+  ext n
+  rw [coeff_ogf, coeff_ogf]
+  have key : 𝒜.Fiber n ≃ ℬ.Fiber n := Equiv.subtypeEquiv e fun a => by rw [he a]
+  exact Nat.card_congr key
+
 /-! ### Disjoint union -/
 
 /-- The fiber of a disjoint union splits as the disjoint union of the fibers. -/
 def sumFiberEquiv (n : ℕ) :
-    {x : 𝒜.carrier ⊕ ℬ.carrier // Sum.elim 𝒜.size ℬ.size x = n} ≃ 𝒜.Fiber n ⊕ ℬ.Fiber n where
-  toFun x := match x with
-    | ⟨Sum.inl a, h⟩ => Sum.inl ⟨a, h⟩
-    | ⟨Sum.inr b, h⟩ => Sum.inr ⟨b, h⟩
-  invFun x := match x with
-    | Sum.inl ⟨a, h⟩ => ⟨Sum.inl a, h⟩
-    | Sum.inr ⟨b, h⟩ => ⟨Sum.inr b, h⟩
-  left_inv x := by rcases x with ⟨a | b, h⟩ <;> rfl
-  right_inv x := by rcases x with (⟨a, h⟩ | ⟨b, h⟩) <;> rfl
+    {x : 𝒜.carrier ⊕ ℬ.carrier // Sum.elim 𝒜.size ℬ.size x = n} ≃ 𝒜.Fiber n ⊕ ℬ.Fiber n :=
+  Equiv.subtypeSum
 
 /-- The disjoint union of two combinatorial classes: objects are objects of `𝒜` or of `ℬ`,
 with the same size. -/
