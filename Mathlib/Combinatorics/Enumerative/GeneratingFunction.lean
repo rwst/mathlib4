@@ -55,6 +55,7 @@ over.
 * `WeightedClass.sum`, `WeightedClass.prod`, `WeightedClass.wepsilon`, `WeightedClass.seq`:
   the weighted admissible constructions.
 * `WeightedClass.wgfMap`: the weighted GF base-changed into an arbitrary (semi)ring `R`.
+* `CombinatorialClass.toWeighted`: an ordinary class as the `σ = Unit` weighted class.
 
 ## Main results
 
@@ -72,14 +73,19 @@ over.
   sequence functional equation.
 * `WeightedClass.wgfMap_seq`: over a field `K`, the multivariate closed form
   `(𝒜.seq h).wgfMap K = (1 - 𝒜.wgfMap K)⁻¹` (`MvPowerSeries.Inverse`).
+* `CombinatorialClass.ogf_eq_tsum`, `WeightedClass.wgf_eq_tsum`: the generating function
+  is the sum of the weight monomials over all objects (the Flajolet–Sedgewick defining
+  form), via the discrete/product topology `{Mv,}PowerSeries.WithPiTopology`.
+* `CombinatorialClass.toWeighted_wgf`: the bridge `𝒜.toWeighted.wgf = 𝒜.ogf`, exhibiting
+  `WeightedClass` as a genuine generalisation (the `σ = Unit` case).
 
 ## TODO
 
 * Labelled classes and exponential generating functions.
 * Refactor `PowerSeries.catalanSeries`, `PowerSeries.largeSchroderSeries`,
   `Nat.Partition.genFun` onto this framework.
-* A `WeightedClass Unit ≃ CombinatorialClass` bridge, a `mark` primitive (introducing a
-  fresh statistic variable), and the OGF-from-BGF grading-reindex specialisation.
+* A `mark` primitive (introducing a fresh statistic variable) and the OGF-from-BGF
+  grading-reindex specialisation.
 
 ## References
 
@@ -736,3 +742,46 @@ theorem wgf_eq_tsum :
   exact hasSum_count 𝒜.weight d
 
 end WeightedClass
+
+/-! ## Bridge: every `CombinatorialClass` is a `WeightedClass Unit`
+
+Since `PowerSeries ℕ = MvPowerSeries Unit ℕ`, an ordinary class is the `σ = Unit`
+weighted class with weight monomial `X^(size a) = single () (size a)`. `toWeighted_wgf`
+shows the weighted GF *is* the ordinary OGF, so `WeightedClass` genuinely subsumes
+`CombinatorialClass` with no change to the latter's API. -/
+
+namespace CombinatorialClass
+
+variable (𝒜 : CombinatorialClass.{u})
+
+/-- A combinatorial class as the `σ = Unit` weighted class: the object `a` gets the
+weight monomial `X^(size a)`, i.e. `Finsupp.single () (size a)`. -/
+noncomputable def toWeighted : WeightedClass Unit where
+  carrier := 𝒜.carrier
+  weight a := Finsupp.single () (𝒜.size a)
+  finite_fiber d := by
+    have hiff (a : 𝒜.carrier) :
+        𝒜.size a = d () ↔ Finsupp.single () (𝒜.size a) = d := by
+      constructor
+      · rintro h
+        rw [h]
+        exact (Finsupp.unique_single d).symm
+      · intro h
+        have h2 := congrArg (fun f : Unit →₀ ℕ => f ()) h
+        simpa using h2
+    exact Finite.of_equiv _ (Equiv.subtypeEquivRight hiff)
+
+@[simp]
+theorem toWeighted_wcard (n : ℕ) : 𝒜.toWeighted.wcard (Finsupp.single () n) = 𝒜.card n :=
+  Nat.card_congr (Equiv.subtypeEquivRight fun _ => (Finsupp.single_injective ()).eq_iff)
+
+/-- **The bridge.** The weighted generating function of `𝒜.toWeighted` is exactly the
+ordinary OGF of `𝒜` — both live in `MvPowerSeries Unit ℕ = PowerSeries ℕ`. So
+`WeightedClass` genuinely generalises `CombinatorialClass` (the `σ = Unit` case). -/
+@[simp]
+theorem toWeighted_wgf : 𝒜.toWeighted.wgf = 𝒜.ogf := by
+  refine PowerSeries.ext fun n => ?_
+  rw [coeff_ogf, PowerSeries.coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same,
+    WeightedClass.coeff_wgf, toWeighted_wcard]
+
+end CombinatorialClass
