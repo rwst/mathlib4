@@ -47,6 +47,7 @@ over.
 * `CombinatorialClass`: an abbreviation for the `σ = Unit` weighted class — objects
   with an `ℕ`-valued size, recovered as the single weight exponent.
 * `CombinatorialClass.ofSize`: build one from an `ℕ`-valued size with finite size-fibres.
+* `CombinatorialClass.atom`: the atomic class of a single object of a given size.
 * `CombinatorialClass.ogf`: its ordinary generating function in `PowerSeries ℕ`.
 * `CombinatorialClass.sum`, `CombinatorialClass.prod`: the union and product constructions.
 * `CombinatorialClass.epsilon`: the neutral class (a single object of size `0`).
@@ -56,8 +57,8 @@ over.
   `weight : carrier → (σ →₀ ℕ)` and finite fibers; the multivariate generalisation of
   `CombinatorialClass` (`σ = Unit` recovers it).
 * `WeightedCombinatorialClass.wgf`: its weighted generating function in `MvPowerSeries σ ℕ`.
-* `WeightedCombinatorialClass.sum`/`prod`/`wepsilon`/`seq`: the weighted admissible
-  constructions.
+* `WeightedCombinatorialClass.watom`/`sum`/`prod`/`wepsilon`/`seq`: the weighted
+  admissible constructions (`wepsilon = watom 0`).
 * `WeightedCombinatorialClass.wgfMap`: the weighted GF base-changed into a (semi)ring `R`.
 * `CombinatorialClass.toWeighted`: an ordinary class as the `σ = Unit` weighted class.
 * `WeightedCombinatorialClass.mark`: refine the weight by a statistic (add a marking
@@ -69,6 +70,8 @@ over.
 * `CombinatorialClass.ogf_sum`: `(𝒜.sum ℬ).ogf = 𝒜.ogf + ℬ.ogf`.
 * `CombinatorialClass.ogf_prod`: `(𝒜.prod ℬ).ogf = 𝒜.ogf * ℬ.ogf`.
 * `CombinatorialClass.ogf_epsilon`: `epsilon.ogf = 1`.
+* `CombinatorialClass.ogf_atom` / `WeightedCombinatorialClass.wgf_watom`: the atom's GF
+  is the monomial `Xᵏ` / `X^w`.
 * `CombinatorialClass.ogf_seq`: `(𝒜.seq h).ogf = 1 + 𝒜.ogf * (𝒜.seq h).ogf`, the
   functional equation of the sequence construction.
 * `CombinatorialClass.ogfMap_seq`: over a field `K`, the closed form
@@ -265,26 +268,47 @@ theorem wgf_prod [DecidableEq σ] : (𝒜.prod ℬ).wgf = 𝒜.wgf * ℬ.wgf := 
   ext d
   simp [prod_wcard, MvPowerSeries.coeff_mul]
 
-/-! ### Weighted neutral class -/
+/-! ### The atomic weighted class -/
 
-/-- The weighted neutral class `ε`: a single object of weight `0` (the empty monomial).
-It is the unit for `prod` and the base case of `seq`; its weighted OGF is `1`. -/
-def wepsilon : WeightedCombinatorialClass.{u, v} σ where
+/-- The atomic weighted class `watom w`: a single object of weight `w`. This is the
+building block of the symbolic method — `wepsilon` is `watom 0`, and an ordinary size-`k`
+atom is `watom (Finsupp.single () k)` (see `CombinatorialClass.atom`). -/
+def watom (w : σ →₀ ℕ) : WeightedCombinatorialClass.{u, v} σ where
   carrier := PUnit.{u + 1}
-  weight _ := 0
+  weight _ := w
   finite_fiber _ := Finite.of_injective Subtype.val Subtype.val_injective
 
-theorem wepsilon_wcard [DecidableEq σ] (d : σ →₀ ℕ) :
-    (wepsilon (σ := σ)).wcard d = if d = 0 then 1 else 0 := by
-  have hc : (wepsilon (σ := σ)).wcard d = Nat.card {_u : PUnit // (0 : σ →₀ ℕ) = d} := rfl
+theorem watom_wcard [DecidableEq σ] (w d : σ →₀ ℕ) :
+    (watom (σ := σ) w).wcard d = if d = w then 1 else 0 := by
+  have hc : (watom (σ := σ) w).wcard d = Nat.card {_u : PUnit // w = d} := rfl
   rw [hc]
-  by_cases hd : d = 0
+  by_cases hd : d = w
   · subst hd
     rw [if_pos rfl, Nat.card_congr (Equiv.subtypeUnivEquiv fun _ : PUnit => rfl)]
     exact Nat.card_unique
   · rw [if_neg hd]
-    haveI : IsEmpty {_u : PUnit // (0 : σ →₀ ℕ) = d} := ⟨fun x => hd x.2.symm⟩
+    haveI : IsEmpty {_u : PUnit // w = d} := ⟨fun x => hd x.2.symm⟩
     exact Nat.card_of_isEmpty
+
+/-- The weighted OGF of the weight-`w` atom is the monomial `X^w`. -/
+@[simp]
+theorem wgf_watom (w : σ →₀ ℕ) :
+    (watom (σ := σ) w).wgf = MvPowerSeries.monomial w (1 : ℕ) := by
+  classical
+  ext d
+  rw [coeff_wgf, watom_wcard, MvPowerSeries.coeff_monomial]
+
+/-! ### Weighted neutral class -/
+
+/-- The weighted neutral class `ε`: a single object of weight `0` (the empty monomial),
+i.e. the weight-`0` atom `watom 0`. It is the unit for `prod` and the base case of `seq`;
+its weighted OGF is `1`. -/
+def wepsilon : WeightedCombinatorialClass.{u, v} σ := watom 0
+
+theorem wepsilon_wcard [DecidableEq σ] (d : σ →₀ ℕ) :
+    (wepsilon (σ := σ)).wcard d = if d = 0 then 1 else 0 := by
+  simp only [wepsilon]
+  exact watom_wcard 0 d
 
 /-- The weighted OGF of the neutral class is `1`. -/
 @[simp]
@@ -647,6 +671,27 @@ noncomputable def epsilon : CombinatorialClass := WeightedCombinatorialClass.wep
 
 @[simp] theorem ogf_epsilon : epsilon.ogf = (1 : PowerSeries ℕ) :=
   WeightedCombinatorialClass.wgf_wepsilon
+
+/-- The atomic class of a single object of size `k` — the symbolic-method atom; the unit
+atom `Z` is `atom 1`. It is `watom (Finsupp.single () k)`. -/
+noncomputable def atom (k : ℕ) : CombinatorialClass :=
+  WeightedCombinatorialClass.watom (Finsupp.single () k)
+
+@[simp] theorem atom_size (k : ℕ) (a : (atom k).carrier) : (atom k).size a = k := by
+  simp only [CombinatorialClass.size, atom, WeightedCombinatorialClass.watom,
+    Finsupp.single_eq_same]
+
+theorem atom_card (k m : ℕ) : (atom k).card m = if m = k then 1 else 0 := by
+  rw [card_eq_wcard, atom, WeightedCombinatorialClass.watom_wcard]
+  have hiff : (Finsupp.single () m = Finsupp.single () k) ↔ m = k :=
+    (Finsupp.single_injective ()).eq_iff
+  by_cases h : m = k
+  · rw [if_pos h, if_pos (hiff.mpr h)]
+  · rw [if_neg h, if_neg (hiff.not.mpr h)]
+
+@[simp] theorem ogf_atom (k : ℕ) : (atom k).ogf = (X : PowerSeries ℕ) ^ k := by
+  ext m
+  rw [coeff_ogf, atom_card, PowerSeries.coeff_X_pow]
 
 /-- The sequence construction. -/
 noncomputable def seq (h : ∀ a, 𝒜.size a ≠ 0) : CombinatorialClass :=
