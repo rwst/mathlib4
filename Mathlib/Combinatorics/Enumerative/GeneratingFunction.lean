@@ -15,8 +15,10 @@ public import Mathlib.Data.Set.Finite.List
 public import Mathlib.Logic.Equiv.Prod
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
+public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -89,7 +91,35 @@ over.
 
 open Finset PowerSeries
 
+open scoped PowerSeries.WithPiTopology MvPowerSeries.WithPiTopology
+
 universe u v
+
+/-- A finitely-fibred indicator sums (in the discrete topology on `ℕ`) to the cardinality
+of the fibre: `∑_{a} [g a = d] = #{a : g a = d}`. This is the convergence engine behind
+the “generating function = sum over elements” identities — the finiteness of the fibre
+is exactly the summability hypothesis. -/
+private theorem hasSum_count {α β : Type*} [DecidableEq β] (g : α → β) (d : β)
+    [Finite {a : α // g a = d}] :
+    HasSum (fun a : α => if d = g a then (1 : ℕ) else 0) (Nat.card {a : α // g a = d}) := by
+  classical
+  have hfinst : Finite {a : α | g a = d} := ‹Finite {a : α // g a = d}›
+  have hfin : {a : α | g a = d}.Finite := Set.toFinite _
+  have hsum : (∑ b ∈ hfin.toFinset, if d = g b then (1 : ℕ) else 0)
+      = Nat.card {a : α // g a = d} := by
+    have hone (b) (hb : b ∈ hfin.toFinset) : (if d = g b then (1 : ℕ) else 0) = 1 := by
+      rw [Set.Finite.mem_toFinset] at hb
+      rw [if_pos hb.symm]
+    rw [Finset.sum_congr rfl hone, Finset.sum_const, smul_eq_mul, mul_one,
+      ← Nat.card_eq_card_finite_toFinset hfin]
+    rfl
+  rw [← hsum]
+  apply hasSum_sum_of_ne_finset_zero
+  intro b hb
+  rw [Set.Finite.mem_toFinset] at hb
+  simp only [Set.mem_setOf_eq] at hb
+  rw [if_neg]
+  exact fun h => hb h.symm
 
 /-- A combinatorial class: a type `carrier` equipped with a `size` function whose fibers
 (the objects of each fixed size) are finite. -/
@@ -355,6 +385,19 @@ theorem ogfMap_seq (K : Type*) [Field K] (h : ∀ a, 𝒜.size a ≠ 0) :
         rw [← mul_assoc, PowerSeries.inv_mul_cancel _ hconst, one_mul]
     _ = (1 - 𝒜.ogfMap K)⁻¹ * 1 := by rw [hfe]
     _ = (1 - 𝒜.ogfMap K)⁻¹ := mul_one _
+
+/-! ### The generating function as a sum over elements -/
+
+/-- **The OGF is the sum of `X^(size a)` over all objects.** This is the
+Flajolet–Sedgewick *defining* form `A(X) = ∑_{a ∈ 𝒜} X^|a|`; the family is summable in
+the coefficientwise (discrete) topology on `PowerSeries ℕ` precisely because every fibre
+is finite (`finite_fiber`). It recovers the coefficient definition `ogf = mk card`. -/
+theorem ogf_eq_tsum : 𝒜.ogf = ∑' a : 𝒜.carrier, (X : PowerSeries ℕ) ^ 𝒜.size a := by
+  refine (HasSum.tsum_eq ?_).symm
+  rw [PowerSeries.WithPiTopology.hasSum_iff_hasSum_coeff]
+  intro d
+  simp only [coeff_X_pow, coeff_ogf]
+  exact hasSum_count 𝒜.size d
 
 end CombinatorialClass
 
@@ -676,5 +719,20 @@ theorem wgfMap_seq (K : Type*) [Field K] (h : ∀ a, 𝒜.weight a ≠ 0) :
         rw [← mul_assoc, MvPowerSeries.inv_mul_cancel _ hconst, one_mul]
     _ = (1 - 𝒜.wgfMap K)⁻¹ * 1 := by rw [hfe]
     _ = (1 - 𝒜.wgfMap K)⁻¹ := mul_one _
+
+/-! ### The weighted generating function as a sum over elements -/
+
+/-- **The weighted OGF is the sum of the weight monomials `X^(weight a)` over all
+objects** — the Flajolet–Sedgewick *defining* form `A_wt = ∑_{a ∈ 𝒜} wt(a)`. The family
+is summable in the coefficientwise (discrete) product topology on `MvPowerSeries σ ℕ`
+exactly because every fibre is finite (`finite_fiber`). -/
+theorem wgf_eq_tsum :
+    𝒜.wgf = ∑' a : 𝒜.carrier, MvPowerSeries.monomial (𝒜.weight a) (1 : ℕ) := by
+  classical
+  refine (HasSum.tsum_eq ?_).symm
+  rw [MvPowerSeries.WithPiTopology.hasSum_iff_hasSum_coeff]
+  intro d
+  simp only [MvPowerSeries.coeff_monomial, coeff_wgf]
+  exact hasSum_count 𝒜.weight d
 
 end WeightedClass
