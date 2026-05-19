@@ -35,7 +35,7 @@ symbolic method (Flajolet–Sedgewick, *Analytic Combinatorics*):
 * `CombinatorialClass.sum` (disjoint union) has OGF `A + B`;
 * `CombinatorialClass.prod` (Cartesian product with additive size) has OGF `A * B`.
 
-It also provides the multivariate generalisation `WeightedClass`, where objects carry a
+It also provides the multivariate generalisation `WeightedCombinatorialClass`, where objects carry a
 *monomial weight* `σ →₀ ℕ` instead of an `ℕ` size and the generating function lives in
 `MvPowerSeries σ ℕ`. Since `PowerSeries R = MvPowerSeries Unit R`, the `σ = Unit` case is
 exactly the ordinary theory above; weighting tracks refined statistics (e.g. bivariate
@@ -44,20 +44,24 @@ over.
 
 ## Main definitions
 
-* `CombinatorialClass`: a type with a size function and finite fibers.
+* `CombinatorialClass`: an abbreviation for the `σ = Unit` weighted class — objects
+  with an `ℕ`-valued size, recovered as the single weight exponent.
+* `CombinatorialClass.ofSize`: build one from an `ℕ`-valued size with finite size-fibres.
 * `CombinatorialClass.ogf`: its ordinary generating function in `PowerSeries ℕ`.
 * `CombinatorialClass.sum`, `CombinatorialClass.prod`: the union and product constructions.
 * `CombinatorialClass.epsilon`: the neutral class (a single object of size `0`).
 * `CombinatorialClass.seq`: the sequence construction (finite sequences of objects).
 * `CombinatorialClass.ogfMap`: the OGF base-changed into an arbitrary (semi)ring `R`.
-* `WeightedClass`: a type with a monomial-valued `weight : carrier → (σ →₀ ℕ)` and finite
-  fibers; the multivariate generalisation of `CombinatorialClass` (`σ = Unit` recovers it).
-* `WeightedClass.wgf`: its weighted generating function in `MvPowerSeries σ ℕ`.
-* `WeightedClass.sum`, `WeightedClass.prod`, `WeightedClass.wepsilon`, `WeightedClass.seq`:
-  the weighted admissible constructions.
-* `WeightedClass.wgfMap`: the weighted GF base-changed into an arbitrary (semi)ring `R`.
+* `WeightedCombinatorialClass`: a type with a monomial-valued
+  `weight : carrier → (σ →₀ ℕ)` and finite fibers; the multivariate generalisation of
+  `CombinatorialClass` (`σ = Unit` recovers it).
+* `WeightedCombinatorialClass.wgf`: its weighted generating function in `MvPowerSeries σ ℕ`.
+* `WeightedCombinatorialClass.sum`/`prod`/`wepsilon`/`seq`: the weighted admissible
+  constructions.
+* `WeightedCombinatorialClass.wgfMap`: the weighted GF base-changed into a (semi)ring `R`.
 * `CombinatorialClass.toWeighted`: an ordinary class as the `σ = Unit` weighted class.
-* `WeightedClass.mark`: refine the weight by a statistic (introduce a marking variable).
+* `WeightedCombinatorialClass.mark`: refine the weight by a statistic (add a marking
+  variable).
 
 ## Main results
 
@@ -69,19 +73,19 @@ over.
   functional equation of the sequence construction.
 * `CombinatorialClass.ogfMap_seq`: over a field `K`, the closed form
   `(𝒜.seq h).ogfMap K = (1 - 𝒜.ogfMap K)⁻¹` (`PowerSeries.Inverse`).
-* `WeightedClass.wgf_sum`, `WeightedClass.wgf_prod`, `WeightedClass.wgf_wepsilon`: the
-  weighted analogues of the admissible-construction generating-function identities.
-* `WeightedClass.wgf_seq`: `(𝒜.seq h).wgf = 1 + 𝒜.wgf * (𝒜.seq h).wgf`, the weighted
-  sequence functional equation.
-* `WeightedClass.wgfMap_seq`: over a field `K`, the multivariate closed form
-  `(𝒜.seq h).wgfMap K = (1 - 𝒜.wgfMap K)⁻¹` (`MvPowerSeries.Inverse`).
-* `CombinatorialClass.ogf_eq_tsum`, `WeightedClass.wgf_eq_tsum`: the generating function
-  is the sum of the weight monomials over all objects (the Flajolet–Sedgewick defining
+* `WeightedCombinatorialClass.wgf_sum`/`wgf_prod`/`wgf_wepsilon`: the weighted analogues
+  of the admissible-construction generating-function identities.
+* `WeightedCombinatorialClass.wgf_seq`: `(𝒜.seq h).wgf = 1 + 𝒜.wgf * (𝒜.seq h).wgf`,
+  the weighted sequence functional equation.
+* `WeightedCombinatorialClass.wgfMap_seq`: over a field `K`, the multivariate closed
+  form `(𝒜.seq h).wgfMap K = (1 - 𝒜.wgfMap K)⁻¹` (`MvPowerSeries.Inverse`).
+* `CombinatorialClass.ogf_eq_tsum`, `WeightedCombinatorialClass.wgf_eq_tsum`: the GF is
+  the sum of the weight monomials over all objects (the Flajolet–Sedgewick defining
   form), via the discrete/product topology `{Mv,}PowerSeries.WithPiTopology`.
-* `CombinatorialClass.toWeighted_wgf`: the bridge `𝒜.toWeighted.wgf = 𝒜.ogf`, exhibiting
-  `WeightedClass` as a genuine generalisation (the `σ = Unit` case).
-* `WeightedClass.wcard_eq_tsum_mark`: the OGF is recovered from the marked BGF by summing
-  over the statistic (forgetting the mark — grading-aggregation, no substitution).
+* `CombinatorialClass.toWeighted_wgf`: the collapse identity `𝒜.toWeighted.wgf = 𝒜.ogf`
+  (now `rfl` — `CombinatorialClass` *is* `WeightedCombinatorialClass Unit`).
+* `WeightedCombinatorialClass.wcard_eq_tsum_mark`: the OGF is recovered from the marked
+  BGF by summing over the statistic (forgetting the mark — grading-aggregation).
 
 ## TODO
 
@@ -129,299 +133,19 @@ private theorem hasSum_count {α β : Type*} [DecidableEq β] (g : α → β) (d
   rw [if_neg]
   exact fun h => hb h.symm
 
-/-- A combinatorial class: a type `carrier` equipped with a `size` function whose fibers
-(the objects of each fixed size) are finite. -/
-structure CombinatorialClass where
-  /-- The type of objects of the class. -/
-  carrier : Type u
-  /-- The size of an object. -/
-  size : carrier → ℕ
-  /-- There are only finitely many objects of any given size. -/
-  finite_fiber (n : ℕ) : Finite {a : carrier // size a = n}
-
-namespace CombinatorialClass
-
-variable (𝒜 ℬ : CombinatorialClass.{u})
-
-/-- The type of objects of size `n`. -/
-abbrev Fiber (n : ℕ) : Type _ := {a : 𝒜.carrier // 𝒜.size a = n}
-
-instance instFiniteFiber (n : ℕ) : Finite (𝒜.Fiber n) := 𝒜.finite_fiber n
-
-/-- The number of objects of size `n`. -/
-noncomputable def card (n : ℕ) : ℕ := Nat.card (𝒜.Fiber n)
-
-/-- The ordinary generating function `A(X) = ∑ₙ |𝒜ₙ| Xⁿ`. -/
-noncomputable def ogf : PowerSeries ℕ := PowerSeries.mk 𝒜.card
-
-@[simp]
-theorem coeff_ogf (n : ℕ) : coeff n 𝒜.ogf = 𝒜.card n := by
-  simp only [ogf, coeff_mk]
-
-/-! ### Isomorphism invariance -/
-
-/-- The OGF is an invariant of size-preserving isomorphism: two combinatorial classes
-related by a size-preserving bijection have the same ordinary generating function. -/
-theorem ogf_congr (e : 𝒜.carrier ≃ ℬ.carrier) (he : ∀ a, ℬ.size (e a) = 𝒜.size a) :
-    𝒜.ogf = ℬ.ogf := by
-  ext n
-  rw [coeff_ogf, coeff_ogf]
-  have key : 𝒜.Fiber n ≃ ℬ.Fiber n := Equiv.subtypeEquiv e fun a => by rw [he a]
-  exact Nat.card_congr key
-
-/-! ### Disjoint union -/
-
-/-- The fiber of a disjoint union splits as the disjoint union of the fibers. -/
-def sumFiberEquiv (n : ℕ) :
-    {x : 𝒜.carrier ⊕ ℬ.carrier // Sum.elim 𝒜.size ℬ.size x = n} ≃ 𝒜.Fiber n ⊕ ℬ.Fiber n :=
-  Equiv.subtypeSum
-
-/-- The disjoint union of two combinatorial classes: objects are objects of `𝒜` or of `ℬ`,
-with the same size. -/
-def sum : CombinatorialClass where
-  carrier := 𝒜.carrier ⊕ ℬ.carrier
-  size := Sum.elim 𝒜.size ℬ.size
-  finite_fiber n := Finite.of_equiv _ (𝒜.sumFiberEquiv ℬ n).symm
-
-@[simp]
-theorem sum_card (n : ℕ) : (𝒜.sum ℬ).card n = 𝒜.card n + ℬ.card n :=
-  (Nat.card_congr (𝒜.sumFiberEquiv ℬ n)).trans Nat.card_sum
-
-/-- The OGF of a disjoint union is the sum of the OGFs. -/
-@[simp]
-theorem ogf_sum : (𝒜.sum ℬ).ogf = 𝒜.ogf + ℬ.ogf := by
-  ext n
-  simp [sum_card]
-
-/-! ### Cartesian product -/
-
-/-- The fiber of a product, at a fixed pair of component sizes, is the product of the fibers. -/
-def prodPairEquiv (c : ℕ × ℕ) :
-    {p : 𝒜.carrier × ℬ.carrier // (𝒜.size p.1, ℬ.size p.2) = c} ≃ 𝒜.Fiber c.1 × ℬ.Fiber c.2 where
-  toFun := fun ⟨⟨a, b⟩, h⟩ => (⟨a, congrArg Prod.fst h⟩, ⟨b, congrArg Prod.snd h⟩)
-  invFun := fun ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ => ⟨(a, b), Prod.ext ha hb⟩
-  left_inv := by rintro ⟨⟨a, b⟩, h⟩; rfl
-  right_inv := by rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩; rfl
-
-instance instFiniteProdPair (c : ℕ × ℕ) :
-    Finite {p : 𝒜.carrier × ℬ.carrier // (𝒜.size p.1, ℬ.size p.2) = c} :=
-  Finite.of_equiv _ (𝒜.prodPairEquiv ℬ c).symm
-
-/-- The fiber of a Cartesian product splits, over the antidiagonal, into the pair-fibers. -/
-def prodFiberEquiv (n : ℕ) :
-    {p : 𝒜.carrier × ℬ.carrier // 𝒜.size p.1 + ℬ.size p.2 = n} ≃
-      Σ y : antidiagonal n,
-        {p : 𝒜.carrier × ℬ.carrier // (𝒜.size p.1, ℬ.size p.2) = (y : ℕ × ℕ)} :=
-  (Equiv.subtypeEquivRight fun _ => by simp [Finset.mem_antidiagonal]).trans
-    (Equiv.sigmaSubtypeFiberEquivSubtype
-      (fun p : 𝒜.carrier × ℬ.carrier => (𝒜.size p.1, ℬ.size p.2)) fun _ => Iff.rfl).symm
-
-/-- The Cartesian product of two combinatorial classes: objects are pairs, with size the
-sum of the component sizes. -/
-def prod : CombinatorialClass where
-  carrier := 𝒜.carrier × ℬ.carrier
-  size p := 𝒜.size p.1 + ℬ.size p.2
-  finite_fiber n := Finite.of_equiv _ (𝒜.prodFiberEquiv ℬ n).symm
-
-@[simp]
-theorem prod_card (n : ℕ) :
-    (𝒜.prod ℬ).card n = ∑ p ∈ antidiagonal n, 𝒜.card p.1 * ℬ.card p.2 := by
-  have h1 : (𝒜.prod ℬ).card n = Nat.card (Σ y : antidiagonal n,
-      {p : 𝒜.carrier × ℬ.carrier // (𝒜.size p.1, ℬ.size p.2) = (y : ℕ × ℕ)}) :=
-    Nat.card_congr (𝒜.prodFiberEquiv ℬ n)
-  rw [h1, Nat.card_sigma,
-    ← Finset.sum_coe_sort (antidiagonal n) fun p => 𝒜.card p.1 * ℬ.card p.2]
-  refine Finset.sum_congr rfl fun y _ => ?_
-  rw [Nat.card_congr (𝒜.prodPairEquiv ℬ _), Nat.card_prod]
-  rfl
-
-/-- The OGF of a Cartesian product is the product of the OGFs. -/
-@[simp]
-theorem ogf_prod : (𝒜.prod ℬ).ogf = 𝒜.ogf * ℬ.ogf := by
-  ext n
-  simp [prod_card, coeff_mul]
-
-/-! ### Neutral class -/
-
-/-- The neutral class `ε`: a single object of size `0`. It is the unit for `prod` and
-the base case of `seq`; its OGF is `1`. -/
-def epsilon : CombinatorialClass.{u} where
-  carrier := PUnit.{u + 1}
-  size _ := 0
-  finite_fiber _ := Finite.of_injective Subtype.val Subtype.val_injective
-
-theorem epsilon_card (n : ℕ) : epsilon.card n = if n = 0 then 1 else 0 := by
-  have hc : epsilon.card n = Nat.card {_u : PUnit // (0 : ℕ) = n} := rfl
-  rw [hc]
-  by_cases hn : n = 0
-  · subst hn
-    rw [if_pos rfl, Nat.card_congr (Equiv.subtypeUnivEquiv fun _ : PUnit => rfl)]
-    exact Nat.card_unique
-  · rw [if_neg hn]
-    haveI : IsEmpty {_u : PUnit // (0 : ℕ) = n} := ⟨fun x => hn x.2.symm⟩
-    exact Nat.card_of_isEmpty
-
-/-- The OGF of the neutral class is `1`. -/
-@[simp]
-theorem ogf_epsilon : epsilon.ogf = (1 : PowerSeries ℕ) := by
-  ext n
-  rw [coeff_ogf, epsilon_card, coeff_one]
-
-/-! ### Sequence -/
-
-/-- When no object has size `0`, the length of a sequence is at most its total size
-(every entry contributes at least `1`). -/
-theorem length_le_sum_map (h : ∀ a, 𝒜.size a ≠ 0) (l : List 𝒜.carrier) :
-    l.length ≤ (l.map 𝒜.size).sum := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-      simp only [List.length_cons, List.map_cons, List.sum_cons]
-      have : 1 ≤ 𝒜.size a := Nat.one_le_iff_ne_zero.mpr (h a)
-      omega
-
-/-- Fibers of the sequence construction are finite: a size-`n` sequence has length
-`≤ n` and all of its entries lie among the (finitely many) objects of size `≤ n`. -/
-theorem finite_seq_fiber (h : ∀ a, 𝒜.size a ≠ 0) (n : ℕ) :
-    Finite {l : List 𝒜.carrier // (l.map 𝒜.size).sum = n} := by
-  haveI : Finite {a : 𝒜.carrier // 𝒜.size a ≤ n} :=
-    (Set.Finite.preimage' (Set.finite_Iic n)
-      (fun b _ => Set.finite_coe_iff.mp (𝒜.finite_fiber b))).to_subtype
-  haveI : Finite {m : List {a : 𝒜.carrier // 𝒜.size a ≤ n} // m.length ≤ n} :=
-    (List.finite_length_le {a : 𝒜.carrier // 𝒜.size a ≤ n} n).to_subtype
-  have hmem : ∀ {l : List 𝒜.carrier}, (l.map 𝒜.size).sum = n → ∀ a ∈ l, 𝒜.size a ≤ n :=
-    fun {l} hl a ha =>
-      le_of_le_of_eq (List.le_sum_of_mem (List.mem_map.mpr ⟨a, ha, rfl⟩)) hl
-  refine Finite.of_injective
-    (fun l : {l : List 𝒜.carrier // (l.map 𝒜.size).sum = n} =>
-      (⟨l.1.attachWith (fun a => 𝒜.size a ≤ n) (hmem l.2), by
-          rw [List.length_attachWith]
-          exact le_of_le_of_eq (𝒜.length_le_sum_map h l.1) l.2⟩ :
-        {m : List {a : 𝒜.carrier // 𝒜.size a ≤ n} // m.length ≤ n})) ?_
-  intro x y hxy
-  apply Subtype.ext
-  have h2 := congrArg (List.map Subtype.val) (congrArg Subtype.val hxy)
-  rwa [List.attachWith_map_subtype_val, List.attachWith_map_subtype_val] at h2
-
-/-- The fixed-point (cons) decomposition `SEQ(𝒜) ≅ ε ⊕ 𝒜 × SEQ(𝒜)`: a sequence is
-empty, or a first object followed by a sequence. -/
-def seqDecomp : List 𝒜.carrier ≃ epsilon.carrier ⊕ 𝒜.carrier × List 𝒜.carrier where
-  toFun
-    | [] => Sum.inl ⟨⟩
-    | a :: l => Sum.inr (a, l)
-  invFun
-    | Sum.inl _ => []
-    | Sum.inr (a, l) => a :: l
-  left_inv := by rintro (_ | ⟨a, l⟩) <;> rfl
-  right_inv := by rintro (⟨⟩ | ⟨a, l⟩) <;> rfl
-
-/-- The sequence construction `SEQ(𝒜)`: finite sequences of objects of `𝒜` (which must
-have no object of size `0`), with size the sum of the component sizes. -/
-def seq (h : ∀ a, 𝒜.size a ≠ 0) : CombinatorialClass where
-  carrier := List 𝒜.carrier
-  size l := (l.map 𝒜.size).sum
-  finite_fiber n := 𝒜.finite_seq_fiber h n
-
-/-- **The OGF functional equation of the sequence construction.** It is read off the
-cons decomposition `SEQ(𝒜) ≅ ε ⊕ 𝒜 × SEQ(𝒜)` through `ogf_congr`, `ogf_sum`, `ogf_prod`.
-Over a base ring with subtraction this is the closed form `(SEQ 𝒜).ogf = (1 - 𝒜.ogf)⁻¹`
-(`PowerSeries.Inverse`); over `ℕ` the functional equation is the available form. -/
-theorem ogf_seq (h : ∀ a, 𝒜.size a ≠ 0) :
-    (𝒜.seq h).ogf = 1 + 𝒜.ogf * (𝒜.seq h).ogf := by
-  have hcongr : (𝒜.seq h).ogf = (epsilon.sum (𝒜.prod (𝒜.seq h))).ogf :=
-    ogf_congr (𝒜 := 𝒜.seq h) (ℬ := epsilon.sum (𝒜.prod (𝒜.seq h)))
-      𝒜.seqDecomp (by rintro (_ | ⟨a, l⟩) <;> rfl)
-  nth_rewrite 1 [hcongr]
-  rw [ogf_sum, ogf_prod, ogf_epsilon]
-
-/-! ### Base change and closed forms
-
-The combinatorial OGF lives in `PowerSeries ℕ` (coefficients *are* the counts). Casting
-it into a ring — in particular a field — makes subtraction and inverses available, which
-is what turns the `seq` functional equation into the closed form `(1 - A)⁻¹`. -/
-
-/-- The OGF base-changed into a (semi)ring `R`: `𝒜.ogfMap R = ∑ₙ (|𝒜ₙ| : R) Xⁿ`,
-the image of `𝒜.ogf` under `ℕ → R`. -/
-noncomputable def ogfMap (R : Type*) [Semiring R] : PowerSeries R :=
-  PowerSeries.map (Nat.castRingHom R) 𝒜.ogf
-
-@[simp]
-theorem coeff_ogfMap (R : Type*) [Semiring R] (n : ℕ) :
-    coeff n (𝒜.ogfMap R) = (𝒜.card n : R) := by
-  rw [ogfMap, PowerSeries.coeff_map, coeff_ogf, Nat.coe_castRingHom]
-
-@[simp]
-theorem ogfMap_sum (R : Type*) [Semiring R] :
-    (𝒜.sum ℬ).ogfMap R = 𝒜.ogfMap R + ℬ.ogfMap R := by
-  simp only [ogfMap, ogf_sum, map_add]
-
-@[simp]
-theorem ogfMap_prod (R : Type*) [Semiring R] :
-    (𝒜.prod ℬ).ogfMap R = 𝒜.ogfMap R * ℬ.ogfMap R := by
-  simp only [ogfMap, ogf_prod, map_mul]
-
-@[simp]
-theorem ogfMap_epsilon (R : Type*) [Semiring R] : epsilon.ogfMap R = 1 := by
-  simp only [ogfMap, ogf_epsilon, map_one]
-
-/-- The `seq` functional equation, base-changed into any (semi)ring `R`. -/
-theorem ogfMap_seq_eq (R : Type*) [Semiring R] (h : ∀ a, 𝒜.size a ≠ 0) :
-    (𝒜.seq h).ogfMap R = 1 + 𝒜.ogfMap R * (𝒜.seq h).ogfMap R := by
-  have e := congrArg (PowerSeries.map (Nat.castRingHom R)) (𝒜.ogf_seq h)
-  simpa only [ogfMap, map_add, map_mul, map_one] using e
-
-/-- **The closed form of the sequence OGF.** Over a field `K`, base-changing the
-counts makes `1 - 𝒜.ogfMap K` invertible (its constant term is `1`, since `seq`
-forbids size-`0` objects), and the `seq` functional equation pins the sequence OGF to
-`(1 - 𝒜.ogfMap K)⁻¹`. This is the closed form of the symbolic method's `SEQ`. -/
-theorem ogfMap_seq (K : Type*) [Field K] (h : ∀ a, 𝒜.size a ≠ 0) :
-    (𝒜.seq h).ogfMap K = (1 - 𝒜.ogfMap K)⁻¹ := by
-  have hcard0 : 𝒜.card 0 = 0 := by
-    haveI : IsEmpty (𝒜.Fiber 0) := ⟨fun a => h a.1 a.2⟩
-    exact Nat.card_of_isEmpty
-  have hA0 : PowerSeries.constantCoeff (𝒜.ogfMap K) = 0 := by
-    have h0 := 𝒜.coeff_ogfMap K 0
-    rwa [PowerSeries.coeff_zero_eq_constantCoeff, hcard0, Nat.cast_zero] at h0
-  have hconst : PowerSeries.constantCoeff (1 - 𝒜.ogfMap K) ≠ 0 := by
-    rw [map_sub, map_one, hA0, sub_zero]
-    exact one_ne_zero
-  have hfe : (1 - 𝒜.ogfMap K) * (𝒜.seq h).ogfMap K = 1 := by
-    rw [sub_mul, one_mul, sub_eq_iff_eq_add]
-    exact 𝒜.ogfMap_seq_eq K h
-  calc (𝒜.seq h).ogfMap K
-      = (1 - 𝒜.ogfMap K)⁻¹ * ((1 - 𝒜.ogfMap K) * (𝒜.seq h).ogfMap K) := by
-        rw [← mul_assoc, PowerSeries.inv_mul_cancel _ hconst, one_mul]
-    _ = (1 - 𝒜.ogfMap K)⁻¹ * 1 := by rw [hfe]
-    _ = (1 - 𝒜.ogfMap K)⁻¹ := mul_one _
-
-/-! ### The generating function as a sum over elements -/
-
-/-- **The OGF is the sum of `X^(size a)` over all objects.** This is the
-Flajolet–Sedgewick *defining* form `A(X) = ∑_{a ∈ 𝒜} X^|a|`; the family is summable in
-the coefficientwise (discrete) topology on `PowerSeries ℕ` precisely because every fibre
-is finite (`finite_fiber`). It recovers the coefficient definition `ogf = mk card`. -/
-theorem ogf_eq_tsum : 𝒜.ogf = ∑' a : 𝒜.carrier, (X : PowerSeries ℕ) ^ 𝒜.size a := by
-  refine (HasSum.tsum_eq ?_).symm
-  rw [PowerSeries.WithPiTopology.hasSum_iff_hasSum_coeff]
-  intro d
-  simp only [coeff_X_pow, coeff_ogf]
-  exact hasSum_count 𝒜.size d
-
-end CombinatorialClass
-
 /-! ## Weighted (multivariate) generating functions
 
 Generalising `size : carrier → ℕ` to a *monomial-valued weight*
 `weight : carrier → (σ →₀ ℕ)` yields multivariate generating functions in
 `MvPowerSeries σ ℕ`: the coefficient of the monomial `X^d` counts the objects of
 weight exactly `d`. Since `PowerSeries R = MvPowerSeries Unit R`, the `σ = Unit` case
-is exactly the ordinary generating function above. The single ℕ size survives as the
+is exactly the ordinary generating function below. The single ℕ size survives as the
 total degree `deg`, which drives every finiteness argument. -/
 
 /-- A *weighted combinatorial class*: a type `carrier` equipped with a monomial-valued
 `weight` (an exponent vector `σ →₀ ℕ`) whose fibers — the objects of each fixed weight —
 are finite. The `σ = Unit` case is an ordinary `CombinatorialClass`. -/
-structure WeightedClass (σ : Type*) where
+structure WeightedCombinatorialClass (σ : Type*) where
   /-- The type of objects of the class. -/
   carrier : Type u
   /-- The weight of an object, as a monomial exponent vector. -/
@@ -429,9 +153,9 @@ structure WeightedClass (σ : Type*) where
   /-- There are only finitely many objects of any given weight. -/
   finite_fiber (d : σ →₀ ℕ) : Finite {a : carrier // weight a = d}
 
-namespace WeightedClass
+namespace WeightedCombinatorialClass
 
-variable {σ : Type v} (𝒜 ℬ : WeightedClass.{u, v} σ)
+variable {σ : Type v} (𝒜 ℬ : WeightedCombinatorialClass.{u, v} σ)
 
 /-- The type of objects of weight `d`. -/
 abbrev WFiber (d : σ →₀ ℕ) : Type _ := {a : 𝒜.carrier // 𝒜.weight a = d}
@@ -474,7 +198,7 @@ def wsumFiberEquiv (d : σ →₀ ℕ) :
   Equiv.subtypeSum
 
 /-- The disjoint union of two weighted classes: objects of `𝒜` or of `ℬ`, same weight. -/
-def sum : WeightedClass σ where
+def sum : WeightedCombinatorialClass σ where
   carrier := 𝒜.carrier ⊕ ℬ.carrier
   weight := Sum.elim 𝒜.weight ℬ.weight
   finite_fiber d := Finite.of_equiv _ (𝒜.wsumFiberEquiv ℬ d).symm
@@ -517,7 +241,7 @@ noncomputable def wprodFiberEquiv [DecidableEq σ] (d : σ →₀ ℕ) :
 
 /-- The Cartesian product of two weighted classes: pairs, weight the monomial product
 (exponent sum) of the component weights. -/
-noncomputable def prod [DecidableEq σ] : WeightedClass σ where
+noncomputable def prod [DecidableEq σ] : WeightedCombinatorialClass σ where
   carrier := 𝒜.carrier × ℬ.carrier
   weight p := 𝒜.weight p.1 + ℬ.weight p.2
   finite_fiber d := Finite.of_equiv _ (𝒜.wprodFiberEquiv ℬ d).symm
@@ -545,7 +269,7 @@ theorem wgf_prod [DecidableEq σ] : (𝒜.prod ℬ).wgf = 𝒜.wgf * ℬ.wgf := 
 
 /-- The weighted neutral class `ε`: a single object of weight `0` (the empty monomial).
 It is the unit for `prod` and the base case of `seq`; its weighted OGF is `1`. -/
-def wepsilon : WeightedClass.{u, v} σ where
+def wepsilon : WeightedCombinatorialClass.{u, v} σ where
   carrier := PUnit.{u + 1}
   weight _ := 0
   finite_fiber _ := Finite.of_injective Subtype.val Subtype.val_injective
@@ -649,7 +373,7 @@ def wseqDecomp :
 /-- The weighted sequence construction `SEQ(𝒜)`: finite sequences of objects of `𝒜`
 (which must have no object of weight `0`), with weight the product (exponent sum) of
 the component weights. -/
-noncomputable def seq (h : ∀ a, 𝒜.weight a ≠ 0) : WeightedClass σ where
+noncomputable def seq (h : ∀ a, 𝒜.weight a ≠ 0) : WeightedCombinatorialClass σ where
   carrier := List 𝒜.carrier
   weight l := (l.map 𝒜.weight).sum
   finite_fiber d := 𝒜.finite_wseq_fiber h d
@@ -785,7 +509,8 @@ private theorem sumElim_inj_iff {τ ι : Type*} (f e : τ →₀ ℕ) (g d : ι 
 appending it in fresh variables: `weight a := sumElim (𝒜.weight a) (χ a)` in
 `(σ ⊕ ι) →₀ ℕ`. Marking only *refines* the partition into fibres, so finiteness is
 inherited from `𝒜` (each marked fibre injects into a `𝒜`-fibre). -/
-noncomputable def mark {ι : Type*} (χ : 𝒜.carrier → (ι →₀ ℕ)) : WeightedClass (σ ⊕ ι) where
+noncomputable def mark {ι : Type*} (χ : 𝒜.carrier → (ι →₀ ℕ)) :
+    WeightedCombinatorialClass (σ ⊕ ι) where
   carrier := 𝒜.carrier
   weight a := Finsupp.sumElim (𝒜.weight a) (χ a)
   finite_fiber e := by
@@ -828,47 +553,128 @@ theorem wcard_eq_tsum_mark (e : σ →₀ ℕ) :
   rw [wcard]
   exact hasSum_card_fiber (α := 𝒜.WFiber e) (fun a => χ a.1)
 
-end WeightedClass
+end WeightedCombinatorialClass
 
-/-! ## Bridge: every `CombinatorialClass` is a `WeightedClass Unit`
+/-! ## Ordinary combinatorial classes (the `σ = Unit` case)
 
-Since `PowerSeries ℕ = MvPowerSeries Unit ℕ`, an ordinary class is the `σ = Unit`
-weighted class with weight monomial `X^(size a) = single () (size a)`. `toWeighted_wgf`
-shows the weighted GF *is* the ordinary OGF, so `WeightedClass` genuinely subsumes
-`CombinatorialClass` with no change to the latter's API. -/
+`PowerSeries ℕ = MvPowerSeries Unit ℕ`, so an *ordinary* combinatorial class — objects
+with an `ℕ`-valued `size` — is exactly the `σ = Unit` weighted class, with weight
+monomial `X^(size a) = single () (size a)`. `CombinatorialClass` is that abbreviation;
+the `size`/`ogf` API below is a thin layer over the weighted theory. -/
+
+/-- An (ordinary) combinatorial class: the `σ = Unit` weighted class — objects with an
+`ℕ`-valued size, recovered as the single weight exponent. -/
+abbrev CombinatorialClass := WeightedCombinatorialClass.{u} Unit
 
 namespace CombinatorialClass
 
-variable (𝒜 : CombinatorialClass.{u})
+variable (𝒜 ℬ : CombinatorialClass.{u})
 
-/-- A combinatorial class as the `σ = Unit` weighted class: the object `a` gets the
-weight monomial `X^(size a)`, i.e. `Finsupp.single () (size a)`. -/
-noncomputable def toWeighted : WeightedClass Unit where
-  carrier := 𝒜.carrier
-  weight a := Finsupp.single () (𝒜.size a)
+/-- The size of an object: its single (`Unit`) weight exponent. -/
+def size (a : 𝒜.carrier) : ℕ := 𝒜.weight a ()
+
+theorem weight_eq_single (a : 𝒜.carrier) :
+    𝒜.weight a = Finsupp.single () (𝒜.size a) := Finsupp.unique_single _
+
+theorem size_ne_zero_iff (a : 𝒜.carrier) : 𝒜.size a ≠ 0 ↔ 𝒜.weight a ≠ 0 := by
+  rw [weight_eq_single, ne_eq, ne_eq, Finsupp.single_eq_zero]
+
+/-- Build a combinatorial class from an `ℕ`-valued size with finite size-fibres. -/
+noncomputable def ofSize {carrier : Type u} (size : carrier → ℕ)
+    (hfin : ∀ n, Finite {a : carrier // size a = n}) : CombinatorialClass where
+  carrier := carrier
+  weight a := Finsupp.single () (size a)
   finite_fiber d := by
-    have hiff (a : 𝒜.carrier) :
-        𝒜.size a = d () ↔ Finsupp.single () (𝒜.size a) = d := by
+    have hiff (a : carrier) : size a = d () ↔ Finsupp.single () (size a) = d := by
       constructor
-      · rintro h
-        rw [h]
-        exact (Finsupp.unique_single d).symm
-      · intro h
-        have h2 := congrArg (fun f : Unit →₀ ℕ => f ()) h
-        simpa using h2
+      · rintro h; rw [h]; exact (Finsupp.unique_single d).symm
+      · intro h; have h2 := congrArg (fun f : Unit →₀ ℕ => f ()) h; simpa using h2
+    haveI := hfin (d ())
     exact Finite.of_equiv _ (Equiv.subtypeEquivRight hiff)
 
-@[simp]
-theorem toWeighted_wcard (n : ℕ) : 𝒜.toWeighted.wcard (Finsupp.single () n) = 𝒜.card n :=
-  Nat.card_congr (Equiv.subtypeEquivRight fun _ => (Finsupp.single_injective ()).eq_iff)
+@[simp] theorem ofSize_carrier {carrier : Type u} (size : carrier → ℕ) (hfin) :
+    (ofSize size hfin).carrier = carrier := rfl
 
-/-- **The bridge.** The weighted generating function of `𝒜.toWeighted` is exactly the
-ordinary OGF of `𝒜` — both live in `MvPowerSeries Unit ℕ = PowerSeries ℕ`. So
-`WeightedClass` genuinely generalises `CombinatorialClass` (the `σ = Unit` case). -/
-@[simp]
-theorem toWeighted_wgf : 𝒜.toWeighted.wgf = 𝒜.ogf := by
-  refine PowerSeries.ext fun n => ?_
-  rw [coeff_ogf, PowerSeries.coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same,
-    WeightedClass.coeff_wgf, toWeighted_wcard]
+@[simp] theorem ofSize_size {carrier : Type u} (size : carrier → ℕ) (hfin)
+    (a : carrier) : (ofSize size hfin).size a = size a := by
+  simp only [CombinatorialClass.size, ofSize, Finsupp.single_eq_same]
+
+/-- The type of objects of size `n`. -/
+abbrev Fiber (n : ℕ) : Type _ := {a : 𝒜.carrier // 𝒜.size a = n}
+
+/-- A size-`n` fibre is the weight-`single () n` fibre of the underlying weighted class. -/
+def fiber_equiv_wfiber (n : ℕ) :
+    𝒜.Fiber n ≃ 𝒜.WFiber (Finsupp.single () n) :=
+  Equiv.subtypeEquivRight fun a => by
+    rw [weight_eq_single]
+    exact ⟨fun h => by rw [h], fun h => (Finsupp.single_injective ()).eq_iff.mp h⟩
+
+instance instFiniteFiber (n : ℕ) : Finite (𝒜.Fiber n) :=
+  Finite.of_equiv _ (𝒜.fiber_equiv_wfiber n).symm
+
+/-- The number of objects of size `n`. -/
+noncomputable def card (n : ℕ) : ℕ := Nat.card (𝒜.Fiber n)
+
+theorem card_eq_wcard (n : ℕ) : 𝒜.card n = 𝒜.wcard (Finsupp.single () n) :=
+  Nat.card_congr (𝒜.fiber_equiv_wfiber n)
+
+/-- The ordinary generating function `A(X) = ∑ₙ |𝒜ₙ| Xⁿ`. -/
+noncomputable def ogf : PowerSeries ℕ := 𝒜.wgf
+
+@[simp] theorem coeff_ogf (n : ℕ) : PowerSeries.coeff n 𝒜.ogf = 𝒜.card n := by
+  rw [ogf, PowerSeries.coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same,
+    WeightedCombinatorialClass.coeff_wgf, ← card_eq_wcard]
+
+theorem ogf_congr (e : 𝒜.carrier ≃ ℬ.carrier) (he : ∀ a, ℬ.size (e a) = 𝒜.size a) :
+    𝒜.ogf = ℬ.ogf :=
+  WeightedCombinatorialClass.wgf_congr 𝒜 ℬ e fun a => by
+    rw [weight_eq_single, weight_eq_single, he a]
+
+/-- The disjoint union. -/
+def sum : CombinatorialClass := WeightedCombinatorialClass.sum 𝒜 ℬ
+
+@[simp] theorem ogf_sum : (𝒜.sum ℬ).ogf = 𝒜.ogf + ℬ.ogf :=
+  WeightedCombinatorialClass.wgf_sum 𝒜 ℬ
+
+/-- The Cartesian product (additive size). -/
+noncomputable def prod : CombinatorialClass := WeightedCombinatorialClass.prod 𝒜 ℬ
+
+@[simp] theorem ogf_prod : (𝒜.prod ℬ).ogf = 𝒜.ogf * ℬ.ogf :=
+  WeightedCombinatorialClass.wgf_prod 𝒜 ℬ
+
+/-- The neutral class (a single object of size `0`). -/
+noncomputable def epsilon : CombinatorialClass := WeightedCombinatorialClass.wepsilon
+
+@[simp] theorem ogf_epsilon : epsilon.ogf = (1 : PowerSeries ℕ) :=
+  WeightedCombinatorialClass.wgf_wepsilon
+
+/-- The sequence construction. -/
+noncomputable def seq (h : ∀ a, 𝒜.size a ≠ 0) : CombinatorialClass :=
+  WeightedCombinatorialClass.seq 𝒜 fun a => (𝒜.size_ne_zero_iff a).mp (h a)
+
+theorem ogf_seq (h : ∀ a, 𝒜.size a ≠ 0) :
+    (𝒜.seq h).ogf = 1 + 𝒜.ogf * (𝒜.seq h).ogf :=
+  WeightedCombinatorialClass.wgf_seq 𝒜 _
+
+/-- The OGF base-changed into a (semi)ring `R`. -/
+noncomputable def ogfMap (R : Type*) [Semiring R] : PowerSeries R := 𝒜.wgfMap R
+
+theorem ogfMap_seq (K : Type*) [Field K] (h : ∀ a, 𝒜.size a ≠ 0) :
+    (𝒜.seq h).ogfMap K = (1 - 𝒜.ogfMap K)⁻¹ :=
+  WeightedCombinatorialClass.wgfMap_seq 𝒜 K _
+
+theorem ogf_eq_tsum : 𝒜.ogf = ∑' a : 𝒜.carrier, (X : PowerSeries ℕ) ^ 𝒜.size a := by
+  refine (HasSum.tsum_eq ?_).symm
+  rw [PowerSeries.WithPiTopology.hasSum_iff_hasSum_coeff]
+  intro d
+  simp only [coeff_X_pow, coeff_ogf]
+  exact hasSum_count 𝒜.size d
+
+/-- `CombinatorialClass` *is* `WeightedCombinatorialClass Unit`; `toWeighted` is the
+identity, kept so the weighted API (`mark`, `wcard`, …) applies to ordinary classes. -/
+abbrev toWeighted : WeightedCombinatorialClass Unit := 𝒜
+
+@[simp] theorem toWeighted_wgf : 𝒜.toWeighted.wgf = 𝒜.ogf := rfl
 
 end CombinatorialClass
+
