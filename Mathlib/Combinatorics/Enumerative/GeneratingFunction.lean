@@ -5,6 +5,7 @@ Authors: Ralf Stephan
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Nat
 public import Mathlib.Algebra.Order.BigOperators.Group.List
 public import Mathlib.Data.Finite.Prod
 public import Mathlib.Data.Finite.Sigma
@@ -56,6 +57,7 @@ over.
   the weighted admissible constructions.
 * `WeightedClass.wgfMap`: the weighted GF base-changed into an arbitrary (semi)ring `R`.
 * `CombinatorialClass.toWeighted`: an ordinary class as the `σ = Unit` weighted class.
+* `WeightedClass.mark`: refine the weight by a statistic (introduce a marking variable).
 
 ## Main results
 
@@ -78,14 +80,14 @@ over.
   form), via the discrete/product topology `{Mv,}PowerSeries.WithPiTopology`.
 * `CombinatorialClass.toWeighted_wgf`: the bridge `𝒜.toWeighted.wgf = 𝒜.ogf`, exhibiting
   `WeightedClass` as a genuine generalisation (the `σ = Unit` case).
+* `WeightedClass.wcard_eq_tsum_mark`: the OGF is recovered from the marked BGF by summing
+  over the statistic (forgetting the mark — grading-aggregation, no substitution).
 
 ## TODO
 
 * Labelled classes and exponential generating functions.
 * Refactor `PowerSeries.catalanSeries`, `PowerSeries.largeSchroderSeries`,
   `Nat.Partition.genFun` onto this framework.
-* A `mark` primitive (introducing a fresh statistic variable) and the OGF-from-BGF
-  grading-reindex specialisation.
 
 ## References
 
@@ -740,6 +742,91 @@ theorem wgf_eq_tsum :
   intro d
   simp only [MvPowerSeries.coeff_monomial, coeff_wgf]
   exact hasSum_count 𝒜.weight d
+
+/-! ### Marking a statistic, and recovering the OGF by forgetting it -/
+
+/-- For a function out of a finite type, the family of fibre cardinalities sums (in the
+discrete topology on `ℕ`) to the cardinality of the domain: only the finitely many
+values in the range have a nonempty fibre. This is the convergence engine behind
+`wcard_eq_tsum_mark` (summing the marked counts over the statistic). -/
+private theorem hasSum_card_fiber {α β : Type*} [Finite α] (f : α → β) :
+    HasSum (fun b : β => Nat.card {a : α // f a = b}) (Nat.card α) := by
+  classical
+  have hrange : (Set.range f).Finite := Set.finite_range f
+  have hpre : f ⁻¹' (hrange.toFinset : Set β) = Set.univ := by
+    ext a; simp
+  have hcard : Nat.card α = ∑ b ∈ hrange.toFinset, Nat.card {a : α // f a = b} := by
+    rw [← Finset.card_preimage_eq_sum_card_image_eq
+        (fun b _ => Set.toFinite {a | f a = b}), hpre]
+    exact (Nat.card_congr (Equiv.Set.univ α)).symm
+  rw [hcard]
+  apply hasSum_sum_of_ne_finset_zero
+  intro b hb
+  rw [Set.Finite.mem_toFinset] at hb
+  have : IsEmpty {a : α // f a = b} := ⟨fun a => hb ⟨a.1, a.2⟩⟩
+  exact Nat.card_of_isEmpty
+
+/-- `Finsupp.sumElim` is injective in its two arguments jointly: a glued exponent vector
+on `τ ⊕ ι` determines its `τ`-part and its `ι`-part. This is what splits a marked fibre
+(weight `sumElim e d`) into the `𝒜`-weight condition `= e` and the statistic `= d`. -/
+private theorem sumElim_inj_iff {τ ι : Type*} (f e : τ →₀ ℕ) (g d : ι →₀ ℕ) :
+    Finsupp.sumElim f g = Finsupp.sumElim e d ↔ f = e ∧ g = d := by
+  constructor
+  · intro h
+    refine ⟨?_, ?_⟩
+    · have h2 := congrArg (fun t => Finsupp.comapDomain Sum.inl t Sum.inl_injective.injOn) h
+      simpa only [Finsupp.comapDomain_inl_sumElim] using h2
+    · have h2 := congrArg (fun t => Finsupp.comapDomain Sum.inr t Sum.inr_injective.injOn) h
+      simpa only [Finsupp.comapDomain_inr_sumElim] using h2
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+/-- **The marking primitive.** Refine the weight by a statistic `χ : carrier → (ι →₀ ℕ)`,
+appending it in fresh variables: `weight a := sumElim (𝒜.weight a) (χ a)` in
+`(σ ⊕ ι) →₀ ℕ`. Marking only *refines* the partition into fibres, so finiteness is
+inherited from `𝒜` (each marked fibre injects into a `𝒜`-fibre). -/
+noncomputable def mark {ι : Type*} (χ : 𝒜.carrier → (ι →₀ ℕ)) : WeightedClass (σ ⊕ ι) where
+  carrier := 𝒜.carrier
+  weight a := Finsupp.sumElim (𝒜.weight a) (χ a)
+  finite_fiber e := by
+    refine Finite.of_injective
+      (fun a : {a : 𝒜.carrier // Finsupp.sumElim (𝒜.weight a) (χ a) = e} =>
+        (⟨a.1, ?_⟩ : 𝒜.WFiber (Finsupp.comapDomain Sum.inl e Sum.inl_injective.injOn)))
+      (fun x y h => Subtype.ext (Subtype.mk.injEq .. ▸ h))
+    have h2 := congrArg (fun t => Finsupp.comapDomain Sum.inl t Sum.inl_injective.injOn) a.2
+    simpa only [Finsupp.comapDomain_inl_sumElim] using h2
+
+variable {ι : Type*} (χ : 𝒜.carrier → (ι →₀ ℕ))
+
+/-- The marked count is the *bivariate* (refined) count: objects of `𝒜`-weight `e`
+*and* statistic `d`. -/
+theorem mark_wcard (e : σ →₀ ℕ) (d : ι →₀ ℕ) :
+    (𝒜.mark χ).wcard (Finsupp.sumElim e d) =
+      Nat.card {a : 𝒜.carrier // 𝒜.weight a = e ∧ χ a = d} := by
+  simp only [wcard, WFiber, mark]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun a => ?_)
+  exact sumElim_inj_iff (𝒜.weight a) e (χ a) d
+
+/-- **The OGF is recovered from the BGF by forgetting the mark.** Summing the marked
+counts over all values of the statistic returns the original counts; the family is
+summable in discrete `ℕ` because the `e`-fibre of `𝒜` is finite. This is the
+grading-aggregation form of "specialise the marking variables to `1`" (D2a), needing
+no power-series substitution. -/
+theorem wcard_eq_tsum_mark (e : σ →₀ ℕ) :
+    HasSum (fun d : ι →₀ ℕ => (𝒜.mark χ).wcard (Finsupp.sumElim e d)) (𝒜.wcard e) := by
+  have hfun (d : ι →₀ ℕ) :
+      (𝒜.mark χ).wcard (Finsupp.sumElim e d)
+        = Nat.card {a : 𝒜.WFiber e // χ a.1 = d} := by
+    rw [𝒜.mark_wcard χ e d]
+    refine Nat.card_congr ?_
+    exact
+      { toFun := fun a => ⟨⟨a.1, a.2.1⟩, a.2.2⟩
+        invFun := fun a => ⟨a.1.1, a.1.2, a.2⟩
+        left_inv := fun a => rfl
+        right_inv := fun a => rfl }
+  simp only [hfun]
+  rw [wcard]
+  exact hasSum_card_fiber (α := 𝒜.WFiber e) (fun a => χ a.1)
 
 end WeightedClass
 
