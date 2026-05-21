@@ -3514,6 +3514,7 @@ public import Mathlib.Combinatorics.Enumerative.DoubleCounting
 public import Mathlib.Combinatorics.Enumerative.DyckWord
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Atom
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Defs
+public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Map
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Prod
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Seq
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.SeqEquation
