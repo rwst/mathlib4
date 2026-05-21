@@ -3515,6 +3515,7 @@ public import Mathlib.Combinatorics.Enumerative.DyckWord
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Atom
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Defs
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Prod
+public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Seq
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Sum
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 public import Mathlib.Combinatorics.Enumerative.InclusionExclusion
