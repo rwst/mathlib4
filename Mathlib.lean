@@ -3519,6 +3519,7 @@ public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.MapSeq
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Mark
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Ogf
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.OgfCombinators
+public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.OgfSeq
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Prod
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.Seq
 public import Mathlib.Combinatorics.Enumerative.GeneratingFunction.SeqEquation
